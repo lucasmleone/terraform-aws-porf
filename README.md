@@ -1,15 +1,12 @@
-# WebServer AWS (Desafío 7)
+# AWS Web Server with Terraform
 
-## Descripción
-Implementa con Terraform el Laboratorio 2 del Desafío 7:
-- VPC `/16` con 2 subredes públicas y 2 privadas en us-east-1a/b
-- Internet Gateway (lab-igw)
-- NAT Gateway con Elastic IP (AZ1)
-- Tablas de ruteo: pública→IGW, privada→NAT
-- Security Group HTTP (puerto 80 abierto)
-- EC2 t2.micro (Amazon Linux 2023) en subred pública AZ2 con user_data (Apache, PHP, app demo)
+## Overview
+This project provisions a complete AWS web server environment using Terraform. It automates the setup of a secure, highly available, and scalable infrastructure, including networking components, security groups, and an EC2 instance running a sample web application.
 
-## Arquitectura
+## Problem Statement
+Provision an AWS environment that includes a VPC with both public and private subnets, internet and NAT gateways, appropriate routing, and a web server accessible via HTTP. The infrastructure should follow best practices for security and availability, and be fully reproducible using Infrastructure as Code.
+
+## Architecture
 ```text
          Internet
             |
@@ -34,46 +31,54 @@ Priv1     Priv2
 (AZ1)     (AZ2)
 ```
 
-## Prerrequisitos
-- Terraform instalado.
-- Credenciales AWS configuradas (`~/.aws/credentials` o variables `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
-- Par de claves EC2 **vockey** en la región us-east-1 (hardcodeado en `main.tf`).
+## Key Features
+- Automated provisioning of a custom VPC with public and private subnets across multiple availability zones.
+- Internet Gateway and NAT Gateway setup for controlled internet access.
+- Custom route tables for public and private networking.
+- Security Group allowing HTTP (port 80) traffic to the web server.
+- EC2 instance (Amazon Linux 2023, t2.micro) deployed in a public subnet with user data to install Apache, PHP, and a demo web application.
+- Infrastructure as Code managed with Terraform for repeatability and version control.
 
-## Recursos Creados
-- VPC: **lab-vpc** (10.0.0.0/16)  
-- Subred pública AZ1: **lab-subnet-public1-us-east-1a** (10.0.0.0/24)  
-- Subred pública AZ2: **lab-subnet-public2** (10.0.2.0/24)  
-- Subred privada AZ1: **lab-subnet-private1-us-east-1a** (10.0.1.0/24)  
-- Subred privada AZ2: **lab-subnet-private2** (10.0.3.0/24)  
-- Internet Gateway: **lab-igw**  
-- Elastic IP NAT: **lab-nat-eip**  
-- NAT Gateway AZ1: **lab-nat-public1-us-east-1a**  
-- Tablas de ruteo: **lab-rtb-public**, **lab-rtb-private1-us-east-1a**  
-- Security Group HTTP: **Web Security Group**  
-- EC2 “Web Server 1” (t2.micro) en Subred Pública AZ2  
+## Requirements
+- Terraform installed.
+- AWS credentials configured (via `~/.aws/credentials` or environment variables `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+- EC2 key pair named **vockey** in the us-east-1 region (referenced in `main.tf`).
 
-## Ejecución
+## Deployment
+Initialize Terraform and deploy the infrastructure:
 ```bash
 terraform init
-terraform plan       # revisa plan y nombres 
-terraform apply      # crea todos los recursos según main.tf
+terraform plan       # Review the execution plan and resource names
+terraform apply      # Provision all resources as defined in main.tf
 ```
 
-## Destrucción
+## Teardown
+To destroy all provisioned resources:
 ```bash
-terraform destroy    # destruye todo sin variables adicionales
+terraform destroy
 ```
 
-## Evidencias
-Las siguientes capturas muestran los recursos desplegados y su verificación:
+## Project Structure
+- `main.tf`: Main Terraform configuration file defining all AWS resources.
+- `variables.tf`: Input variables for parameterizing the deployment.
+- `outputs.tf`: Output values such as public IPs and URLs.
+- `img/`: Directory containing deployment evidence and screenshots.
 
-![](./img/terraform-apply.png) 
+## Evidence
+The following images demonstrate the deployed resources and web server verification:
 
+**Terraform Apply Output**
+![](./img/terraform-apply.png)
 
+**Deployed AWS Resources**
+![](./img/resultado-lab.png)
 
-![](./img/resultado-lab.png)  
+**Web Server Running**
+![](./img/web-working.png)
 
-
-![](./img/web-working.png)  
-
-
+## Skills & Technologies Used
+- AWS VPC, Subnets, Route Tables, Internet Gateway, NAT Gateway, Elastic IP
+- EC2 Instances, Security Groups, Key Pairs
+- Terraform (Infrastructure as Code)
+- Amazon Linux, Apache, PHP
+- Linux shell scripting (user data)

@@ -1,34 +1,34 @@
 # VPC principal: bloque IP y soporte DNS habilitado
 resource "aws_vpc" "lab_vpc" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
-    Name = "lab-vpc"
+    Name = "${var.project_name}-vpc"
   }
 }
 
 # Subred pública AZ1: asigna IP pública automáticamente
 resource "aws_subnet" "lab_public_subnet1" {
   vpc_id                  = aws_vpc.lab_vpc.id
-  cidr_block              = "10.0.0.0/24"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.public_subnet1_cidr
+  availability_zone       = var.az1
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "lab-subnet-public1-us-east-1a"
+    Name = "${var.project_name}-subnet-public1-${var.az1}"
   }
 }
 
 # Subred privada AZ1: sin IP pública
 resource "aws_subnet" "lab_private_subnet1" {
   vpc_id                  = aws_vpc.lab_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.private_subnet1_cidr
+  availability_zone       = var.az1
 
   tags = {
-    Name = "lab-subnet-private1-us-east-1a"
+    Name = "${var.project_name}-subnet-private1-${var.az1}"
   }
 }
 
@@ -51,12 +51,12 @@ resource "aws_eip" "lab_nat_eip" {
 }
 
 // NAT Gateway AZ1: permite que subredes privadas accedan a Internet
-resource "aws_nat_gateway" "lab-nat-gateway" {
+resource "aws_nat_gateway" "lab_nat_gw" {
   allocation_id = aws_eip.lab_nat_eip.id
   subnet_id     = aws_subnet.lab_public_subnet1.id
 
   tags = {
-    Name = "lab-nat-public1-us-east-1a"
+    Name = "${var.project_name}-nat-${var.az1}"
   }
 
   # To ensure proper ordering, it is recommended to add an explicit dependency
@@ -82,10 +82,10 @@ resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.lab_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.lab-nat-gateway.id
+    nat_gateway_id = aws_nat_gateway.lab_nat_gw.id
   }
   tags = {
-    Name = "lab-rtb-private1-us-east-1a"
+    Name = "${var.project_name}-rtb-private1-${var.az1}"
   }
 }
 
@@ -104,23 +104,23 @@ resource "aws_route_table_association" "lab_rt_assoc_public" {
 # Subred pública AZ2
 resource "aws_subnet" "lab_public_subnet2" {
   vpc_id                  = aws_vpc.lab_vpc.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.public_subnet2_cidr
+  availability_zone       = var.az2
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "lab-subnet-public2"
+    Name = "${var.project_name}-subnet-public2-${var.az2}"
   }
 }
 
 # Subred privada AZ2
 resource "aws_subnet" "lab_private_subnet2" {
   vpc_id                  = aws_vpc.lab_vpc.id
-  cidr_block              = "10.0.3.0/24"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.private_subnet2_cidr
+  availability_zone       = var.az2
 
   tags = {
-    Name = "lab-subnet-private2"
+    Name = "${var.project_name}-subnet-private2-${var.az2}"
   }
 }
 
@@ -164,10 +164,10 @@ resource "aws_vpc_security_group_ingress_rule" "allow_http_ipv4" {
 }
 
 # EC2 Instance: servidor web con Apache, PHP y contenido demo
-resource "aws_instance" "web-server1" {
+resource "aws_instance" "web_server1" {
   ami           = "resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
-  instance_type = "t2.micro"
-  key_name = "vockey"
+  instance_type = var.instance_type
+  key_name = var.key_name
   subnet_id     = aws_subnet.lab_public_subnet2.id
   vpc_security_group_ids = [aws_security_group.allow_http.id]
   associate_public_ip_address = true
@@ -184,6 +184,6 @@ service httpd start
 EOF
 
   tags = {
-    Name = "Web Server 1"
+    Name = "${var.project_name}-web-server1"
   }
 }
